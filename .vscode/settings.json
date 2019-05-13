@@ -1,0 +1,7 @@
+{
+    "python.pythonPath": "/home/iyuge2/anaconda3/bin/python",
+    // "python.linting.pylintArgs": [
+    //     "--disable=E1101",
+    //     "--disable=W"
+    // ]
+}
