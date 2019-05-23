@@ -1,54 +1,51 @@
-# -*- coding: utf-8 -*-
-"""evaluate script"""
-
-from __future__ import (
-    division, absolute_import, print_function, unicode_literals)
-import argparse
-from io import open
-
+import os
+import glob
+from tqdm import tqdm
+import pandas as pd
 import numpy as np
-from sklearn.metrics import accuracy_score, f1_score
+from PIL import Image
 
+import torch
+from torchvision import transforms as T
 
-def load_labels(path):
-    """Load labels from `path`"""
-    pid_to_lbl = {}
-    with open(path, 'rt', encoding='utf-8') as fin:
-        for line in fin:
-            pid, lbl = line.strip().split(',')
-            pid_to_lbl[pid] = int(lbl)
-    return pid_to_lbl
+from dataLoader import CancerDataLoaderForTest
+from model import Resnet34
 
-def main():
-    """entry point"""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('truth_path', help='path to the truth')
-    parser.add_argument('pred_path', help='path to the predictions')
-    args = parser.parse_args()
+os.chdir('/home/iyuge2/Project/BreastCancerDetection') # change current working dir
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
-    truth = load_labels(args.truth_path)
-    pred = load_labels(args.pred_path)
-
-    if len(truth) != len(pred):
-        raise RuntimeError(
-            'The number of prediction records ({}) is not consistent with '
-            'the number of truth records ({}).'
-            .format(len(pred), len(truth)))
-
-    truth_labels, pred_labels = [], []
-    for pid in truth:
-        if pid not in pred:
-            raise RuntimeError(
-                'Record `{}` is not in the predictions.'.format(pid))
-        truth_labels.append(truth[pid])
-        pred_labels.append(pred[pid])
-    truth_labels = np.array(truth_labels)
-    pred_labels = np.array(pred_labels)
-    metrics = {
-        'accuracy': accuracy_score(truth_labels, pred_labels),
-        'macro_f1': f1_score(truth_labels, pred_labels, average='macro')
-    }
-    print(metrics)
+def do_eval(csv_path, dst_path, pth_path, image_size):
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    # model
+    model = Resnet34(num_classes=4)
+    # 加载模型
+    model.load_state_dict(torch.load(pth_path))
+    model.to(device).eval()
+    # load data
+    num = 0
+    tmp_df = pd.DataFrame(columns=['id', 'label'])
+    loader = CancerDataLoaderForTest(csv_path, image_size, num_workers=8)
+    for m, data in enumerate(tqdm(loader)):
+        image = data['image'].to(device)
+        feature = data['feature'].to(device)
+        id = data['id']
+        outputs = model(image, feature)
+        y_pred = torch.max(outputs.cpu(), 1)[1].tolist()
+        for i in range(len(y_pred)):
+            tmp_df.loc[num] = [id[i], y_pred[i]]
+            num += 1
+    # get results for push
+    dst_df = pd.DataFrame(columns=['id', 'label'])
+    df = pd.read_csv(csv_path)
+    for i in range(len(df)):
+        id = df.iloc[i]['id']
+        true_label = tmp_df.loc[tmp_df['id']==id]['label'].value_counts().index[0] + 1
+        dst_df.loc[i] = [id, true_label]
+    dst_df.to_csv(dst_path, header=None, index=False)
 
 if __name__ == '__main__':
-    main()
+    IMAGE_SIZE = (150, 100)
+    csv_path = 'data/test/feats.csv'
+    dst_path = 'result.csv'
+    pth_path = '/home/iyuge2/Project/BreastCancerDetection/tmp/ep_10_RESNET34_val_f1_0.4838.pth'
+    do_eval(csv_path, dst_path, pth_path, IMAGE_SIZE)
