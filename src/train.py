@@ -2,6 +2,7 @@ import os
 import glob
 from tqdm import tqdm
 import numpy as np
+import argparse
 from sklearn.metrics import accuracy_score, f1_score
 
 import torch
@@ -12,7 +13,6 @@ from model import Resnet34, SCNN
 from dataLoader import CancerDataLoader
 
 # change current working dir
-os.chdir('/home/iyuge2/Project/BreastCancerDetection')
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 ModelDict = {
@@ -108,10 +108,16 @@ def run(csv_path, image_size, model_name, epochs=200, num_classes=4, early_stop=
     do_train(model, dataLoader, optimizer, criterion, device, model_name,
              model_save_path='tmp', epoches=epochs, early_stop=early_stop)
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--feats_path', default='data/train/feats.csv',
+                        help='path of input feats.')
+    return parser.parse_args()
 
 if __name__ == '__main__':
+    args = parse_args()
     # train image
     IMAGE_SIZE = (150, 100)
-    csv_path = 'data/train_2/feats.csv'
+    csv_path = args.feats_path
     run(csv_path, IMAGE_SIZE, model_name='RESNET34',
         epochs=200, num_classes=4, early_stop=8)

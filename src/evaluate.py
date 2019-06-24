@@ -3,6 +3,7 @@ import glob
 from tqdm import tqdm
 import pandas as pd
 import numpy as np
+import argparse
 from PIL import Image
 
 import torch
@@ -43,9 +44,20 @@ def do_eval(csv_path, dst_path, pth_path, image_size):
         dst_df.loc[i] = [id, true_label]
     dst_df.to_csv(dst_path, header=None, index=False)
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--feats_path', default='data/train/feats.csv',
+                        help='path of input feats.')
+    parser.add_argument('--pred_path', default='result.csv',
+                        help='path of results.')
+    parser.add_argument('--pth_path', default='',
+                        help='path of pretrained model.')
+    return parser.parse_args()
+
 if __name__ == '__main__':
+    args = parse_args()
     IMAGE_SIZE = (150, 100)
-    csv_path = 'data/test_2/feats.csv'
-    dst_path = 'result.csv'
-    pth_path = '/home/iyuge2/Project/BreastCancerDetection/tmp/ep_12_RESNET34_val_f1_0.5164.pth'
+    csv_path = args.feats_path
+    dst_path = args.pred_path
+    pth_path = args.pth_path
     do_eval(csv_path, dst_path, pth_path, IMAGE_SIZE)
