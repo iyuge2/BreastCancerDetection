@@ -59,10 +59,11 @@ def get_images_path(df, mode):
 
 def CancerDataLoader(csv_path, image_size, shuffle=True, batch_size=8, test_size=0.2, num_workers=8):
     df = pd.read_csv(csv_path)
-    train_df, val_df = train_test_split(df, test_size=test_size, random_state=99, 
+    train_df, val_df = train_test_split(df, test_size=0.2, random_state=99, 
                                         shuffle=shuffle, stratify=df['molecular_subtype'].values)
-    train_df = get_images_path(train_df, 'train')
-    val_df = get_images_path(val_df, 'train')
+    train_df = df
+    train_df = get_images_path(train_df, 'train_2')
+    val_df = get_images_path(val_df, 'train_2')
     # oversample on train dataset
     train_y = train_df['label'].tolist()
     ros = RandomOverSampler(random_state=99)
@@ -89,9 +90,10 @@ def CancerDataLoader(csv_path, image_size, shuffle=True, batch_size=8, test_size
 def CancerDataLoaderForTest(csv_path, image_size, batch_size=8, num_workers=0):
     df = pd.read_csv(csv_path)
     df['label'] = -1 # for use CancerData class
-    df = get_images_path(df, 'test')
+    df = get_images_path(df, 'test_2')
     transform = T.Compose([
         T.Resize(image_size),
+        # T.CenterCrop([100, 150]),
         T.ToTensor(),
         T.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
     ])

@@ -11,13 +11,15 @@ from torch import optim
 from model import Resnet34, SCNN
 from dataLoader import CancerDataLoader
 
-os.chdir('/home/iyuge2/Project/BreastCancerDetection') # change current working dir
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+# change current working dir
+os.chdir('/home/iyuge2/Project/BreastCancerDetection')
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 ModelDict = {
     'RESNET34': Resnet34,
     'SCNN': SCNN,
 }
+
 
 def do_train(model, dataLoader, optimizer, criterion, device, model_name,
              model_save_path='tmp', epoches=100, early_stop=8):
@@ -78,18 +80,20 @@ def do_train(model, dataLoader, optimizer, criterion, device, model_name,
                              f'ep_{epoch}_{model_name}_val_f1_{val_f1:.4f}.pth'))
             model.to(device)
         # print
-        print('Epoch %d >> train loss: %.5f, train acc: %.2f, train f1: %.2f, val loss: %.5f, val acc: %.2f, val f1:%.2f' \
-                %(epoch, train_loss, train_acc, train_f1, val_loss, val_acc, val_f1))
+        print('Epoch %d >> train loss: %.5f, train acc: %.2f, train f1: %.2f, val loss: %.5f, val acc: %.2f, val f1:%.2f'
+              % (epoch, train_loss, train_acc, train_f1, val_loss, val_acc, val_f1))
         # early stop
         if epoch - best_epoch > early_stop:
             break
+
 
 def run(csv_path, image_size, model_name, epochs=200, num_classes=4, early_stop=8):
     """
     model_name: 'DNN', 'RESNET34'
     """
     # dataLoader
-    dataLoader = CancerDataLoader(csv_path, image_size, shuffle=True, batch_size=16, test_size=0.2, num_workers=8)
+    dataLoader = CancerDataLoader(
+        csv_path, image_size, shuffle=True, batch_size=16, test_size=0.2, num_workers=8)
     # model
     Model = ModelDict[model_name]
     model = Model(num_classes=num_classes)
@@ -97,16 +101,17 @@ def run(csv_path, image_size, model_name, epochs=200, num_classes=4, early_stop=
     criterion = nn.CrossEntropyLoss()
     # optimizer
     # optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-    optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=0.01)
+    optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=0.05)
     # using GPU
     device = torch.device('cuda: 0' if torch.cuda.is_available() else "cpu")
     # device = torch.device('cpu')
     do_train(model, dataLoader, optimizer, criterion, device, model_name,
-            model_save_path='tmp', epoches=epochs, early_stop=early_stop)
+             model_save_path='tmp', epoches=epochs, early_stop=early_stop)
+
 
 if __name__ == '__main__':
     # train image
     IMAGE_SIZE = (150, 100)
-    csv_path = 'data/train/feats.csv'
-    run(csv_path, IMAGE_SIZE, model_name='RESNET34', 
-            epochs=200, num_classes=4, early_stop=8)
+    csv_path = 'data/train_2/feats.csv'
+    run(csv_path, IMAGE_SIZE, model_name='RESNET34',
+        epochs=200, num_classes=4, early_stop=8)

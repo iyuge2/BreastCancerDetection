@@ -12,7 +12,7 @@ from dataLoader import CancerDataLoaderForTest
 from model import Resnet34
 
 os.chdir('/home/iyuge2/Project/BreastCancerDetection') # change current working dir
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 def do_eval(csv_path, dst_path, pth_path, image_size):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -45,7 +45,7 @@ def do_eval(csv_path, dst_path, pth_path, image_size):
 
 if __name__ == '__main__':
     IMAGE_SIZE = (150, 100)
-    csv_path = 'data/test/feats.csv'
+    csv_path = 'data/test_2/feats.csv'
     dst_path = 'result.csv'
-    pth_path = '/home/iyuge2/Project/BreastCancerDetection/tmp/ep_10_RESNET34_val_f1_0.4838.pth'
+    pth_path = '/home/iyuge2/Project/BreastCancerDetection/tmp/ep_12_RESNET34_val_f1_0.5164.pth'
     do_eval(csv_path, dst_path, pth_path, IMAGE_SIZE)

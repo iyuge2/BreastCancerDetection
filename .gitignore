@@ -1,2 +1,5 @@
-/data/
-*.pth
+data
+tmp
+model
+.vscode
+.ipynb_checkpoints
